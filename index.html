@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Personal Sales Tracker - All-in-One</title>
+    <title>Personal Sales Tracker - All-in-One (v2)</title>
     <style>
         /* --- CSS STYLES --- */
         body {
@@ -118,26 +118,29 @@
             font-weight: 600;
             white-space: nowrap;
         }
-        td .action-button {
+        td .action-button, .list-item-actions button { /* Combined for consistency */
             font-size: 0.8em;
             padding: 5px 8px;
-            margin-right: 5px;
+            margin-left: 5px; 
         }
-
+        
         /* Product List & Custom Field Styling */
-        #productList div, #customFieldsList div {
+        #productList .list-item, #customFieldsList .list-item { 
             padding: 8px;
             border-bottom: 1px solid #e4e6eb;
             display: flex;
             justify-content: space-between;
             align-items: center;
         }
-        #productList div:last-child, #customFieldsList div:last-child {
+        #productList .list-item:last-child, #customFieldsList .list-item:last-child {
             border-bottom: none;
         }
+        .list-item-info { flex-grow: 1; } 
         .field-name-display {
             font-weight: 500;
         }
+        .list-item-actions { white-space: nowrap; }
+
 
         /* Summary section */
         #summarySection {
@@ -174,7 +177,6 @@
         .notification-area.info {
             background-color: #cce5ff; color: #004085; border: 1px solid #b8daff; display: block;
         }
-        /* --- END CSS STYLES --- */
     </style>
 </head>
 <body>
@@ -186,19 +188,29 @@
         <div class="settings-section">
             <h2>Global Settings</h2>
             
-            <!-- Product Price Management -->
+            <!-- VVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVV -->
+            <!-- START OF CHANGES FOR PRODUCT EDIT AND COMMISSION/UNIT -->
+            <!-- VVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVV -->
             <div id="productManagementSection">
                 <h3>Product Prices</h3>
-                <div id="productList"></div>
-                <input type="text" id="newProductName" placeholder="New Product Name">
-                <input type="number" id="newProductPrice" placeholder="Default Price" step="0.01" min="0">
+                <div id="productList">
+                    <!-- Product list with Edit/Delete buttons will be populated here by JS -->
+                </div>
+                <input type="text" id="newProductName" placeholder="Product Name (Unique)">
+                <input type="number" id="newProductPrice" placeholder="Default Price/Unit" step="0.01" min="0">
+                <!-- COMMISSION/UNIT INPUT FIELD FOR PRODUCT -->
+                <input type="number" id="newProductCommissionPerUnit" placeholder="Default Commission/Unit" step="0.01" min="0">
+                <input type="hidden" id="editingProductId"> <!-- For tracking which product is being edited -->
                 <button id="addProductButton">Add/Update Product</button>
+                <button id="cancelEditProductButton" class="secondary" style="display:none;">Cancel Edit</button>
             </div>
+            <!-- ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ -->
+            <!-- END OF CHANGES FOR PRODUCT EDIT AND COMMISSION/UNIT -->
+            <!-- ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ -->
             <hr style="margin: 15px 0;">
-            <!-- Custom Field/Cell Management -->
             <div id="customFieldManagementSection">
                 <h3>Custom Data Fields (Additional Cells)</h3>
-                <p style="font-size:0.85em; color: #606770;">Define extra text fields you want to record for each sale. These will appear as new columns.</p>
+                <p style="font-size:0.85em; color: #606770;">Define extra text fields for each sale.</p>
                 <div id="customFieldsList"></div>
                 <input type="text" id="newCustomFieldName" placeholder="New Field Name (e.g., Customer Note)">
                 <button id="addCustomFieldButton">Add Custom Field</button>
@@ -206,7 +218,6 @@
         </div>
         <hr>
 
-        <!-- Section for Adding a New Sale -->
         <div class="form-section">
             <h2>Add New Sale</h2>
             <form id="saleForm">
@@ -230,23 +241,20 @@
                     <input type="number" id="itemPrice" step="0.01" min="0" required>
                 </div>
                 <div>
-                    <label for="commission">Commission:</label>
+                    <!-- This commission field will be auto-populated or can be manually overridden -->
+                    <label for="commission">Commission (Total for this sale):</label>
                     <input type="number" id="commission" value="0" step="0.01" min="0">
                 </div>
                 <div>
                     <label for="vaiWillPay">Vai Will Pay:</label>
                     <input type="number" id="vaiWillPay" value="0" step="0.01" min="0">
                 </div>
-                <!-- Dynamic Custom Fields for Data Entry -->
-                <div id="saleEntryCustomFieldsContainer">
-                    <!-- Custom field inputs will be generated here by JS -->
-                </div>
+                <div id="saleEntryCustomFieldsContainer"></div>
                 <button type="submit">Add Sale</button>
             </form>
         </div>
         <hr>
 
-        <!-- Section for Displaying Sales Records -->
         <h2>Sales Records</h2>
         <div class="button-group">
             <button id="exportPdfButton">Export to PDF</button>
@@ -261,26 +269,15 @@
              <table id="salesTable">
                 <thead>
                     <tr id="salesTableHeaderRow">
-                        <th>Day</th>
-                        <th>Date</th>
-                        <th>Item Name</th>
-                        <th>Qty</th>
-                        <th>Item Price</th>
-                        <th>Total Item Price</th>
-                        <th>Commission</th>
-                        <th>Vai Will Pay</th>
-                        <th>(Pure)Profit This Entry</th>
-                        <!-- Custom field headers will be generated here by JS -->
+                        <th>Day</th><th>Date</th><th>Item Name</th><th>Qty</th><th>Item Price</th>
+                        <th>Total Item Price</th><th>Commission</th><th>Vai Will Pay</th><th>(Pure)Profit This Entry</th>
                         <th>Actions</th>
                     </tr>
                 </thead>
-                <tbody id="salesTableBody">
-                    <!-- Sales records will be populated here by JS -->
-                </tbody>
+                <tbody id="salesTableBody"></tbody>
             </table>
         </div>
 
-        <!-- Summary Section -->
         <div id="summarySection">
             <h3>Summary Totals (All Time)</h3>
             <p><strong>Total Sold Item Prices:</strong> $<span id="sumTotalSoldPrices">0.00</span></p>
@@ -292,23 +289,27 @@
         </div>
     </div>
 
-    <!-- jsPDF Libraries (Ideally, serve from CDN or local files if this single file gets too big) -->
-    <!-- For this all-in-one, you'd actually paste the minified content of these here, but that's huge. -->
-    <!-- Placeholder: Assuming these are available globally or you'd paste their content below -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.28/jspdf.plugin.autotable.min.js"></script>
 
     <script>
         // --- JAVASCRIPT LOGIC ---
         document.addEventListener('DOMContentLoaded', () => {
-            // --- DOM Element References ---
             const notificationArea = document.getElementById('notificationArea');
             // Product Management
             const productListDiv = document.getElementById('productList');
             const newProductNameInput = document.getElementById('newProductName');
             const newProductPriceInput = document.getElementById('newProductPrice');
+            // VVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVV
+            // REFERENCE TO THE NEW COMMISSION/UNIT INPUT AND EDITING ID
+            // VVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVV
+            const newProductCommissionPerUnitInput = document.getElementById('newProductCommissionPerUnit'); 
+            const editingProductIdInput = document.getElementById('editingProductId'); 
             const addProductButton = document.getElementById('addProductButton');
-            // Custom Field Management
+            const cancelEditProductButton = document.getElementById('cancelEditProductButton');
+            // ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+            // Custom Field Management (rest of DOM elements are the same as before)
             const customFieldsListDiv = document.getElementById('customFieldsList');
             const newCustomFieldNameInput = document.getElementById('newCustomFieldName');
             const addCustomFieldButton = document.getElementById('addCustomFieldButton');
@@ -321,7 +322,7 @@
             const customItemNameInput = document.getElementById('customItemName');
             const quantityInput = document.getElementById('quantity');
             const itemPriceInput = document.getElementById('itemPrice');
-            const commissionInput = document.getElementById('commission');
+            const commissionInput = document.getElementById('commission'); // This will be auto-filled
             const vaiWillPayInput = document.getElementById('vaiWillPay');
             // Sales Table & Export
             const salesTableBody = document.getElementById('salesTableBody');
@@ -337,110 +338,221 @@
             const sumNumberOfDaysSpan = document.getElementById('sumNumberOfDays');
             const sumAverageProfitPerDaySpan = document.getElementById('sumAverageProfitPerDay');
 
-            // --- Data Storage (using LocalStorage) ---
-            let products = JSON.parse(localStorage.getItem('salesAppProducts_AIO')) || [];
-            let salesRecords = JSON.parse(localStorage.getItem('salesAppRecords_AIO')) || [];
-            let definedCustomFields = JSON.parse(localStorage.getItem('salesAppCustomFields_AIO')) || []; // [{id: 'cf1', name: 'Customer Name'}, ...]
+            // Using a new LocalStorage key for this version to avoid conflicts
+            let products = JSON.parse(localStorage.getItem('salesAppProducts_AIO_v2')) || [];
+            let salesRecords = JSON.parse(localStorage.getItem('salesAppRecords_AIO_v2')) || [];
+            let definedCustomFields = JSON.parse(localStorage.getItem('salesAppCustomFields_AIO_v2')) || [];
 
-            // --- Utility Functions ---
-            function showNotification(message, type = 'info', duration = 3000) {
+            function showNotification(message, type = 'info', duration = 3000) { 
                 notificationArea.textContent = message;
                 notificationArea.className = 'notification-area ' + type;
                 setTimeout(() => {
-                    notificationArea.className = 'notification-area'; // Hide
+                    notificationArea.className = 'notification-area'; 
                 }, duration);
             }
-            function saveProducts() { localStorage.setItem('salesAppProducts_AIO', JSON.stringify(products)); }
-            function saveSalesRecords() { localStorage.setItem('salesAppRecords_AIO', JSON.stringify(salesRecords)); }
-            function saveCustomFields() { localStorage.setItem('salesAppCustomFields_AIO', JSON.stringify(definedCustomFields)); }
-            function getDayName(dateString) {
+            function saveProducts() { localStorage.setItem('salesAppProducts_AIO_v2', JSON.stringify(products)); }
+            function saveSalesRecords() { localStorage.setItem('salesAppRecords_AIO_v2', JSON.stringify(salesRecords)); }
+            function saveCustomFields() { localStorage.setItem('salesAppCustomFields_AIO_v2', JSON.stringify(definedCustomFields)); }
+            function getDayName(dateString) { 
                 const date = new Date(dateString + 'T00:00:00');
                 return date.toLocaleDateString(undefined, { weekday: 'short' });
             }
-            function generateId() { return Date.now().toString(36) + Math.random().toString(36).substring(2); }
+            function generateId() { 
+                return Date.now().toString(36) + Math.random().toString(36).substring(2);
+            }
 
             // --- Product Management ---
             function renderProductList() {
                 productListDiv.innerHTML = '';
                 products.forEach(product => {
                     const div = document.createElement('div');
-                    div.innerHTML = `<span class="field-name-display">${product.name} - $${parseFloat(product.price).toFixed(2)}</span>
-                                     <button class="danger action-button" data-id="${product.id}">Delete</button>`;
+                    div.classList.add('list-item'); 
+                    // VVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVV
+                    // DISPLAYING COMMISSION/UNIT AND ADDING EDIT BUTTON
+                    // VVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVV
+                    div.innerHTML = `
+                        <div class="list-item-info">
+                            <span class="field-name-display">${product.name}</span><br>
+                            <small>Price: $${parseFloat(product.price).toFixed(2)} | Comm/Unit: $${parseFloat(product.commissionPerUnit || 0).toFixed(2)}</small>
+                        </div>
+                        <div class="list-item-actions">
+                            <button class="secondary action-button edit-product" data-id="${product.id}">Edit</button>
+                            <button class="danger action-button delete-product" data-id="${product.id}">Delete</button>
+                        </div>`;
+                    // ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
                     productListDiv.appendChild(div);
                 });
                 populateItemNameDropdown();
             }
-            productListDiv.addEventListener('click', (e) => { // Event delegation for delete
-                if (e.target.tagName === 'BUTTON' && e.target.dataset.id) {
-                    if (confirm('Are you sure you want to delete this product?')) {
-                        products = products.filter(p => p.id !== e.target.dataset.id);
+
+            function clearProductForm() {
+                newProductNameInput.value = '';
+                newProductPriceInput.value = '';
+                newProductCommissionPerUnitInput.value = ''; // Clear commission field
+                editingProductIdInput.value = ''; 
+                addProductButton.textContent = 'Add Product';
+                cancelEditProductButton.style.display = 'none';
+                newProductNameInput.disabled = false; 
+            }
+
+            // VVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVV
+            // EVENT LISTENER FOR EDIT AND DELETE PRODUCT BUTTONS
+            // VVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVV
+            productListDiv.addEventListener('click', (e) => {
+                if (e.target.classList.contains('delete-product')) {
+                    const productId = e.target.dataset.id;
+                    if (confirm('Are you sure you want to delete this product? This action cannot be undone.')) {
+                        products = products.filter(p => p.id !== productId);
                         saveProducts();
                         renderProductList();
+                        if (editingProductIdInput.value === productId) { // If deleting the product being edited
+                            clearProductForm();
+                        }
                         showNotification('Product deleted.', 'success');
+                    }
+                } else if (e.target.classList.contains('edit-product')) {
+                    const productId = e.target.dataset.id;
+                    const productToEdit = products.find(p => p.id === productId);
+                    if (productToEdit) {
+                        newProductNameInput.value = productToEdit.name;
+                        newProductPriceInput.value = productToEdit.price.toFixed(2);
+                        newProductCommissionPerUnitInput.value = (productToEdit.commissionPerUnit || 0).toFixed(2);
+                        editingProductIdInput.value = productToEdit.id; 
+                        addProductButton.textContent = 'Update Product';
+                        cancelEditProductButton.style.display = 'inline-block';
+                        newProductNameInput.disabled = true; // Prevent changing name during edit to simplify uniqueness logic
+                        newProductPriceInput.focus();
                     }
                 }
             });
-            function populateItemNameDropdown() {
+            // ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+            cancelEditProductButton.addEventListener('click', clearProductForm);
+
+            function populateItemNameDropdown() { 
                 const originalValue = itemNameSelect.value;
                 itemNameSelect.innerHTML = '<option value="">-- Select Product --</option>';
                 products.forEach(product => {
                     const option = document.createElement('option');
-                    option.value = product.name;
+                    option.value = product.name; 
                     option.textContent = product.name;
                     option.dataset.price = product.price;
+                    // VVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVV
+                    // ADDING COMMISSION/UNIT TO DROPDOWN DATASET FOR LATER USE
+                    // VVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVV
+                    option.dataset.commissionPerUnit = product.commissionPerUnit || 0; 
+                    // ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
                     itemNameSelect.appendChild(option);
                 });
                 const newOption = document.createElement('option');
                 newOption.value = "__NEW__";
                 newOption.textContent = "-- Add New Item --";
                 itemNameSelect.appendChild(newOption);
-                if (products.find(p => p.name === originalValue)) {
-                     itemNameSelect.value = originalValue; // Preserve selection if possible
+                if (products.find(p => p.name === originalValue) || originalValue === "__NEW__") {
+                     itemNameSelect.value = originalValue; 
+                } else {
+                     itemNameSelect.value = "";
                 }
             }
+
+            // VVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVV
+            // LOGIC FOR ADDING/UPDATING PRODUCT (INCLUDES COMMISSION/UNIT)
+            // VVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVV
             addProductButton.addEventListener('click', () => {
                 const name = newProductNameInput.value.trim();
                 const price = parseFloat(newProductPriceInput.value);
-                if (name && !isNaN(price) && price >= 0) {
+                const commissionPerUnit = parseFloat(newProductCommissionPerUnitInput.value) || 0; // Get commission
+                const editingId = editingProductIdInput.value;
+
+                if (!name || isNaN(price) || price < 0 || isNaN(commissionPerUnit) || commissionPerUnit < 0) {
+                    showNotification('Valid product name, price, and commission/unit required.', 'error');
+                    return;
+                }
+
+                if (editingId) { 
+                    const productIndex = products.findIndex(p => p.id === editingId);
+                    if (productIndex > -1) {
+                        // Name is not changed during edit (input is disabled)
+                        products[productIndex].price = price;
+                        products[productIndex].commissionPerUnit = commissionPerUnit; // Update commission
+                        showNotification('Product updated!', 'success');
+                    }
+                } else { 
                     const existingProduct = products.find(p => p.name.toLowerCase() === name.toLowerCase());
-                    if (existingProduct) { existingProduct.price = price; }
-                    else { products.push({ id: generateId(), name, price }); }
-                    saveProducts();
-                    renderProductList();
-                    newProductNameInput.value = ''; newProductPriceInput.value = '';
-                    showNotification(existingProduct ? 'Product updated!' : 'Product added!', 'success');
-                } else { showNotification('Valid product name and price required.', 'error'); }
+                    if (existingProduct) {
+                        showNotification('Product name already exists. Edit the existing one or use a different name.', 'error');
+                        return;
+                    }
+                    products.push({ id: generateId(), name, price, commissionPerUnit }); // Save commission
+                    showNotification('Product added!', 'success');
+                }
+                saveProducts();
+                renderProductList();
+                clearProductForm();
             });
+            // ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+            // VVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVV
+            // FUNCTION TO AUTO-CALCULATE TOTAL COMMISSION IN SALE FORM
+            // VVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVV
+            function updateCommissionBasedOnProductAndQuantity() {
+                const selectedOption = itemNameSelect.options[itemNameSelect.selectedIndex];
+                const quantity = parseInt(quantityInput.value) || 0;
+
+                if (selectedOption && selectedOption.dataset.commissionPerUnit && quantity > 0) {
+                    const commissionPerUnit = parseFloat(selectedOption.dataset.commissionPerUnit);
+                    commissionInput.value = (commissionPerUnit * quantity).toFixed(2);
+                } else if (selectedOption.value !== "__NEW__" && selectedOption.value !== "") { 
+                     // Only reset to 0 if a product was selected but commission/unit is missing, or quantity is 0
+                     // Don't reset if it's "-- Select Product --" or "__NEW__" to allow manual entry
+                     commissionInput.value = "0.00";
+                } else if (selectedOption.value === "") { // If "-- Select Product --" is chosen
+                    commissionInput.value = "0.00"; // Reset commission
+                }
+                // If "__NEW__", commission is not auto-set, allowing manual input or it defaults to 0 from form reset
+            }
+            // ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
             itemNameSelect.addEventListener('change', (e) => {
                 const selectedOption = e.target.options[e.target.selectedIndex];
                 customItemNameInput.style.display = 'none';
                 if (selectedOption.value === "__NEW__") {
                     customItemNameInput.style.display = 'block';
-                    customItemNameInput.value = ''; itemPriceInput.value = '';
+                    customItemNameInput.value = ''; 
+                    itemPriceInput.value = ''; 
+                    commissionInput.value = '0.00'; // Reset commission for new item
                     customItemNameInput.focus();
                 } else if (selectedOption.dataset.price) {
                     itemPriceInput.value = parseFloat(selectedOption.dataset.price).toFixed(2);
-                } else { itemPriceInput.value = ''; }
+                    updateCommissionBasedOnProductAndQuantity(); // Update commission
+                } else {
+                    itemPriceInput.value = '';
+                    commissionInput.value = '0.00'; // Reset if no product selected
+                }
             });
 
-            // --- Custom Field (Cell) Management ---
-            function renderCustomFieldsList() {
+            quantityInput.addEventListener('input', updateCommissionBasedOnProductAndQuantity);
+
+
+            // --- Custom Field (Cell) Management --- (No changes here from v2)
+            function renderCustomFieldsList() { 
                 customFieldsListDiv.innerHTML = '';
                 definedCustomFields.forEach(field => {
                     const div = document.createElement('div');
-                    div.innerHTML = `<span class="field-name-display">${field.name} (ID: ${field.id})</span>
-                                     <button class="danger action-button" data-id="${field.id}">Delete</button>`;
+                    div.classList.add('list-item');
+                    div.innerHTML = `<div class="list-item-info"><span class="field-name-display">${field.name}</span></div>
+                                     <div class="list-item-actions"><button class="danger action-button" data-id="${field.id}">Delete</button></div>`;
                     customFieldsListDiv.appendChild(div);
                 });
                 renderCustomFieldInputsForEntry();
-                renderSalesTable(); // Re-render table to update headers
+                renderSalesTable(); 
             }
-            customFieldsListDiv.addEventListener('click', (e) => { // Event delegation for delete
-                if (e.target.tagName === 'BUTTON' && e.target.dataset.id) {
+            customFieldsListDiv.addEventListener('click', (e) => { 
+                if (e.target.tagName === 'BUTTON' && e.target.dataset.id && e.target.classList.contains('danger')) { // More specific
                     const fieldIdToDelete = e.target.dataset.id;
-                     if (confirm(`Are you sure you want to delete the custom field "${definedCustomFields.find(f=>f.id === fieldIdToDelete)?.name}"? This will also remove its data from existing sales records.`)) {
+                    const fieldNameToDelete = definedCustomFields.find(f=>f.id === fieldIdToDelete)?.name;
+                     if (confirm(`Are you sure you want to delete the custom field "${fieldNameToDelete}"? This will also remove its data from existing sales records.`)) {
                         definedCustomFields = definedCustomFields.filter(f => f.id !== fieldIdToDelete);
-                        // Remove this field's data from all sales records
                         salesRecords.forEach(record => {
                             if (record.customData && record.customData[fieldIdToDelete]) {
                                 delete record.customData[fieldIdToDelete];
@@ -448,12 +560,12 @@
                         });
                         saveCustomFields();
                         saveSalesRecords();
-                        renderCustomFieldsList(); // This will call renderSalesTable
+                        renderCustomFieldsList(); 
                         showNotification('Custom field deleted.', 'success');
                     }
                 }
             });
-            addCustomFieldButton.addEventListener('click', () => {
+            addCustomFieldButton.addEventListener('click', () => { 
                 const name = newCustomFieldNameInput.value.trim();
                 if (name && !definedCustomFields.find(f => f.name.toLowerCase() === name.toLowerCase())) {
                     definedCustomFields.push({ id: 'cf_' + generateId(), name: name });
@@ -461,9 +573,13 @@
                     renderCustomFieldsList();
                     newCustomFieldNameInput.value = '';
                     showNotification('Custom field added!', 'success');
-                } else { showNotification('Valid, unique custom field name required.', 'error'); }
+                } else if (!name) {
+                    showNotification('Custom field name cannot be empty.', 'error');
+                } else {
+                    showNotification('Custom field name already exists.', 'error');
+                }
             });
-            function renderCustomFieldInputsForEntry() {
+            function renderCustomFieldInputsForEntry() { 
                 saleEntryCustomFieldsContainer.innerHTML = '';
                 definedCustomFields.forEach(field => {
                     const div = document.createElement('div');
@@ -471,7 +587,7 @@
                     label.htmlFor = `customFieldInput_${field.id}`;
                     label.textContent = field.name + ':';
                     const input = document.createElement('input');
-                    input.type = 'text'; // For simplicity, all custom fields are text
+                    input.type = 'text'; 
                     input.id = `customFieldInput_${field.id}`;
                     input.dataset.fieldId = field.id;
                     input.placeholder = field.name;
@@ -481,11 +597,17 @@
                 });
             }
 
-            // --- Sales Record Management ---
-            saleForm.addEventListener('submit', (e) => {
+            // --- Sales Record Management --- (No changes here from v2)
+            saleForm.addEventListener('submit', (e) => { 
                 e.preventDefault();
-                let itemName = itemNameSelect.value;
-                if (itemName === "__NEW__") { itemName = customItemNameInput.value.trim(); }
+                let itemNameValue = itemNameSelect.value;
+                if (itemNameValue === "__NEW__") { 
+                    itemNameValue = customItemNameInput.value.trim();
+                    if (!itemNameValue) {
+                        showNotification('New item name cannot be empty.', 'error');
+                        return;
+                    }
+                }
 
                 const customData = {};
                 saleEntryCustomFieldsContainer.querySelectorAll('input[data-field-id]').forEach(input => {
@@ -494,11 +616,11 @@
                     }
                 });
 
-                if (saleDateInput.value && itemName && quantityInput.value > 0 && itemPriceInput.value >= 0) {
+                if (saleDateInput.value && itemNameValue && quantityInput.value > 0 && parseFloat(itemPriceInput.value) >= 0) {
                     const newSale = {
                         id: generateId(),
                         date: saleDateInput.value,
-                        itemName,
+                        itemName: itemNameValue, 
                         quantity: parseInt(quantityInput.value),
                         itemPrice: parseFloat(itemPriceInput.value),
                         commissionEntry: parseFloat(commissionInput.value) || 0,
@@ -508,17 +630,19 @@
                     salesRecords.push(newSale);
                     saveSalesRecords();
                     renderSalesTable();
-                    saleForm.reset();
+                    saleForm.reset(); // This should reset commissionInput as well
                     saleDateInput.valueAsDate = new Date();
-                    customItemNameInput.style.display = 'none'; itemNameSelect.value = ""; itemPriceInput.value = "";
-                    renderCustomFieldInputsForEntry(); // Clear custom inputs
+                    customItemNameInput.style.display = 'none'; 
+                    itemNameSelect.value = ""; // Reset dropdown, which should trigger its change event
+                    itemPriceInput.value = ""; 
+                    commissionInput.value = "0.00"; // Explicitly reset commission
+                    renderCustomFieldInputsForEntry(); 
                     showNotification('Sale added!', 'success');
-                } else { showNotification('Please fill all required fields correctly.', 'error'); }
+                } else { showNotification('Please fill all required fields correctly (Date, Item Name, Quantity > 0, Price >= 0).', 'error'); }
             });
 
-            function renderSalesTable() {
+            function renderSalesTable() { /* ... same as before (dynamic headers for custom fields) ... */
                 salesTableBody.innerHTML = '';
-                // Dynamically build table headers
                 salesTableHeaderRow.innerHTML = `
                     <th>Day</th><th>Date</th><th>Item Name</th><th>Qty</th><th>Item Price</th>
                     <th>Total Item Price</th><th>Commission</th><th>Vai Will Pay</th><th>(Pure)Profit This Entry</th>
@@ -549,7 +673,6 @@
                     row.insertCell().textContent = `$${sale.vaiWillPayEntry.toFixed(2)}`;
                     row.insertCell().textContent = `$${pureProfitThisEntry.toFixed(2)}`;
 
-                    // Add custom field data
                     definedCustomFields.forEach(cf => {
                         row.insertCell().textContent = (sale.customData && sale.customData[cf.id]) ? sale.customData[cf.id] : '';
                     });
@@ -560,11 +683,10 @@
                     deleteButton.classList.add('danger', 'action-button');
                     deleteButton.onclick = () => deleteSale(sale.id);
                     actionsCell.appendChild(deleteButton);
-                    // Add Edit button later if needed
                 });
                 calculateAndDisplaySummary();
             }
-            function deleteSale(saleId) {
+            function deleteSale(saleId) { /* ... same as before ... */
                 if (confirm('Are you sure you want to delete this sale record?')) {
                     salesRecords = salesRecords.filter(sale => sale.id !== saleId);
                     saveSalesRecords();
@@ -573,8 +695,8 @@
                 }
             }
 
-            // --- Calculations for Summary ---
-            function calculateAndDisplaySummary() {
+            // --- Calculations for Summary --- (No changes here from v2)
+            function calculateAndDisplaySummary() { /* ... same as before ... */
                 let totalSold = 0, totalCommission = 0, totalVai = 0, totalPureProfit = 0;
                 const dailyProfits = {};
                 salesRecords.forEach(sale => {
@@ -597,14 +719,14 @@
                 return { totalSold, totalCommission, totalVai, totalPureProfit, numberOfDays, dailyProfits };
             }
 
-            // --- PDF Export ---
-            exportPdfButton.addEventListener('click', () => {
+            // --- PDF Export --- (No changes here from v2)
+            exportPdfButton.addEventListener('click', () => { /* ... same as before (dynamic headers for custom fields) ... */
                 if (typeof jsPDF === 'undefined' || typeof jsPDF.autoTable === 'undefined') {
                     showNotification('PDF libraries not loaded. Check internet connection if using CDN.', 'error');
                     console.error("jsPDF or autoTable not found.");
                     return;
                 }
-                const { jsPDF: JSPDF } = window.jspdf; // Correct way to access constructor from UMD
+                const { jsPDF: JSPDF } = window.jspdf; 
                 const doc = new JSPDF();
                 doc.setFontSize(18); doc.text('Personal Sales Report', 14, 22);
                 doc.setFontSize(11); doc.setTextColor(100);
@@ -620,7 +742,6 @@
                 const head = [
                     ['Day', 'Date', 'Item', 'Qty', 'Price', 'Total Price', 'Comm.', 'Vai Paid', 'Entry Profit']
                 ];
-                // Add custom field headers to PDF head
                 definedCustomFields.forEach(cf => head[0].push(cf.name));
 
                 const body = salesRecords.map(sale => {
@@ -632,7 +753,6 @@
                         `$${sale.commissionEntry.toFixed(2)}`, `$${sale.vaiWillPayEntry.toFixed(2)}`,
                         `$${pureProfitThisEntry.toFixed(2)}`
                     ];
-                    // Add custom field data to PDF body
                     definedCustomFields.forEach(cf => {
                         rowData.push((sale.customData && sale.customData[cf.id]) ? sale.customData[cf.id] : '');
                     });
@@ -643,8 +763,8 @@
                 showNotification('PDF report generated.', 'success');
             });
 
-            // --- Data Backup and Restore ---
-            backupDataButton.addEventListener('click', () => {
+            // --- Data Backup and Restore --- (No changes here from v2)
+            backupDataButton.addEventListener('click', () => { /* ... same as before ... */ 
                 try {
                     const dataToBackup = { products, salesRecords, definedCustomFields };
                     if (products.length === 0 && salesRecords.length === 0 && definedCustomFields.length === 0) {
@@ -655,31 +775,33 @@
                     const url = URL.createObjectURL(blob);
                     const linkElement = document.createElement('a');
                     linkElement.href = url;
-                    linkElement.download = `sales_tracker_aio_backup_${new Date().toISOString().slice(0,10)}.json`;
+                    linkElement.download = `sales_tracker_aio_v2_backup_${new Date().toISOString().slice(0,10)}.json`;
                     document.body.appendChild(linkElement); linkElement.click(); document.body.removeChild(linkElement);
                     URL.revokeObjectURL(url);
                     showNotification('Data backup file downloading.', 'success');
                 } catch (e) { showNotification('Error creating backup.', 'error'); console.error(e); }
             });
-            restoreDataInput.addEventListener('change', (event) => {
+            restoreDataInput.addEventListener('change', (event) => { /* ... same as before ... */ 
                 const file = event.target.files[0];
                 if (file) {
                     const reader = new FileReader();
                     reader.onload = (e) => {
                         try {
                             const restored = JSON.parse(e.target.result);
-                            if (restored && restored.products && restored.salesRecords && restored.definedCustomFields) {
+                            if (restored && typeof restored.products !== 'undefined' && 
+                                typeof restored.salesRecords !== 'undefined' && 
+                                typeof restored.definedCustomFields !== 'undefined') { // Check all expected keys
                                 if (confirm('This will overwrite ALL current data. Are you sure?')) {
                                     products = restored.products;
                                     salesRecords = restored.salesRecords;
                                     definedCustomFields = restored.definedCustomFields;
                                     saveProducts(); saveSalesRecords(); saveCustomFields();
-                                    init(); // Re-initialize the app fully
+                                    init(); 
                                     showNotification('Data restored successfully!', 'success');
                                 }
-                            } else { showNotification('Invalid backup file format.', 'error'); }
+                            } else { showNotification('Invalid backup file format. Missing expected data sections.', 'error'); }
                         } catch (err) { showNotification('Error parsing backup file.', 'error'); console.error(err); }
-                        finally { restoreDataInput.value = ""; } // Reset file input
+                        finally { restoreDataInput.value = ""; } 
                     };
                     reader.readAsText(file);
                 }
@@ -687,11 +809,10 @@
 
             // --- Initialization ---
             function init() {
-                saleDateInput.valueAsDate = new Date(); // Set default date to today
+                saleDateInput.valueAsDate = new Date();
+                clearProductForm(); 
                 renderProductList();
                 renderCustomFieldsList(); // This will also call renderSalesTable via its chain
-                // renderSalesTable(); // Called by renderCustomFieldsList
-                // calculateAndDisplaySummary(); // Called by renderSalesTable
                 showNotification('App initialized.', 'info', 1500);
             }
             init();
